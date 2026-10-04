@@ -14,9 +14,14 @@ patterns.
 
 - Add an expense (description, amount, date); category is auto-suggested
   from keywords in the description and editable before saving
-- Monthly spending dashboard — a trend chart and month cards; click a month
-  to see its category breakdown
-- Category breakdown with proportional bars
+- Import a bank/UPI statement (`.csv`, `.pdf`, `.xlsx`) — transactions are
+  parsed, deduped against what's already stored, and auto-categorized (using
+  the statement's own category tags when it has them, e.g. Paytm's `Tags`
+  column, otherwise keyword-matched from the description)
+- Dashboard: date-range filter (3M/6M/12M/all time), spend totals and
+  monthly average, an SVG trend chart with clickable month cards, and a
+  per-month breakdown (category donut chart, month-over-month change, and
+  largest transactions)
 - Unusual spending insights: categories trending above their historical
   average, and single transactions that are outliers for their category
 
@@ -59,6 +64,8 @@ backend/
   main.py        FastAPI app: API routes + serves the frontend
   models.py      SQLModel Expense table
   database.py    SQLite engine/session
+  categorize.py  keyword- and tag-based auto-categorization
+  importers.py   CSV/PDF/XLSX statement parsing
   test_main.py   backend self-check
 index.html        page markup/styles
 app.js            categorization, insights, dashboard rendering, API calls

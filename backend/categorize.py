@@ -20,3 +20,27 @@ def categorize(description: str) -> str:
         if any(kw in text for kw in keywords):
             return category
     return 'Other'
+
+
+# Payment-app exports (Paytm, PhonePe, GPay) often tag each transaction with
+# their own category ("#🥘 Food", "#🧾 Bill Payments"). That beats guessing
+# from a "Paid to <person name>" description, so importers check this first.
+TAG_CATEGORY_MAP = [
+    ('Food & Dining', ['food']),
+    ('Groceries', ['grocery', 'groceries']),
+    ('Transport', ['fuel', 'petrol', 'diesel', 'commute', 'taxi', 'travel', 'transport']),
+    ('Housing', ['housing', 'rent']),
+    ('Education', ['education', 'tuition']),
+    ('Entertainment', ['entertainment', 'movie']),
+    ('Shopping', ['shopping']),
+    ('Health', ['medical', 'health', 'pharmacy']),
+    ('Utilities', ['bill', 'utilities', 'recharge']),
+]
+
+
+def category_from_tag(tag: str):
+    text = (tag or '').lower()
+    for category, keywords in TAG_CATEGORY_MAP:
+        if any(kw in text for kw in keywords):
+            return category
+    return None

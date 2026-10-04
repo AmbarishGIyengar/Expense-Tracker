@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 
 from .categorize import categorize
 from .database import get_session, init_db
-from .importers import StatementFormatError, parse_csv, parse_pdf
+from .importers import StatementFormatError, parse_csv, parse_pdf, parse_xlsx
 from .models import Expense, ExpenseCreate
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent
@@ -49,8 +49,10 @@ async def import_statement(file: UploadFile = File(...), session: Session = Depe
             source, rows = 'csv', parse_csv(content)
         elif name.endswith('.pdf'):
             source, rows = 'pdf', parse_pdf(content)
+        elif name.endswith('.xlsx'):
+            source, rows = 'xlsx', parse_xlsx(content)
         else:
-            raise HTTPException(status_code=400, detail='Only .csv and .pdf files are supported')
+            raise HTTPException(status_code=400, detail='Only .csv, .pdf, and .xlsx files are supported')
     except StatementFormatError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
@@ -66,7 +68,7 @@ async def import_statement(file: UploadFile = File(...), session: Session = Depe
         existing_hashes.add(row_hash)
         session.add(Expense(
             date=date.fromisoformat(row['date']), description=row['description'], amount=row['amount'],
-            category=categorize(row['description']), source=source, row_hash=row_hash,
+            category=row.get('category') or categorize(row['description']), source=source, row_hash=row_hash,
         ))
         imported += 1
     session.commit()

@@ -1,3 +1,6 @@
+import io
+
+import openpyxl
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlmodel.pool import StaticPool
@@ -44,5 +47,27 @@ assert again == {"total_rows": 1, "imported": 0, "skipped_duplicates": 1}
 imported_expense = client.get("/api/expenses").json()[0]
 assert imported_expense["category"] == "Food & Dining" and imported_expense["source"] == "csv"
 client.delete(f"/api/expenses/{imported_expense['id']}")
+
+# xlsx import (Paytm-style UPI statement): "Transaction Details" as the
+# description column, a non-transactions sheet to skip past.
+wb = openpyxl.Workbook()
+wb.active.title = "Summary"
+wb.active.append(["Money Paid", "-100.00"])
+ws = wb.create_sheet("Passbook Payment History")
+ws.append(["Date", "Time", "Transaction Details", "Amount", "Tags"])
+# description alone has no category keywords; the app's own tag should win
+ws.append(["03/10/2026", "20:04:04", "Paid to Sohani Wo Dhanna Ra", "-40.00", "#🥘 Food"])
+ws.append(["02/10/2026", "12:54:18", "Received from Geethika", "+140.00", "#💵 Money Received"])
+xlsx_buf = io.BytesIO()
+wb.save(xlsx_buf)
+xlsx_result = client.post(
+    "/api/expenses/import",
+    files={"file": ("statement.xlsx", xlsx_buf.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+).json()
+assert xlsx_result == {"total_rows": 1, "imported": 1, "skipped_duplicates": 0}
+xlsx_expense = client.get("/api/expenses").json()[0]
+assert xlsx_expense["source"] == "xlsx" and xlsx_expense["amount"] == 40.0
+assert xlsx_expense["category"] == "Food & Dining"
+client.delete(f"/api/expenses/{xlsx_expense['id']}")
 
 print("all backend self-checks passed")

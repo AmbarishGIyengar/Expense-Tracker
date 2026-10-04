@@ -2,3 +2,8 @@
 __pycache__/
 *.pyc
 *.db
+
+# personal bank/UPI statements dropped here for local import testing
+*.csv
+*.pdf
+*.xlsx

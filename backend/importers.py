@@ -1,13 +1,16 @@
 import csv
 import io
-from datetime import datetime
+from datetime import date, datetime
 
 import pdfplumber
 
+from .categorize import category_from_tag
+
 DATE_KEYS = {'date', 'txn date', 'transaction date', 'value date'}
-DESC_KEYS = {'description', 'narration', 'particulars', 'details'}
+DESC_KEYS = {'description', 'narration', 'particulars', 'details', 'transaction details'}
 AMOUNT_KEYS = {'amount'}
 DEBIT_KEYS = {'debit', 'withdrawal', 'withdrawal amt.', 'withdrawal amt', 'dr'}
+TAG_KEYS = {'tags', 'tag', 'category'}
 
 DATE_FORMATS = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d %b %Y', '%m/%d/%Y']
 
@@ -24,6 +27,10 @@ def _find_col(headers, candidates):
 
 
 def _normalize_date(raw):
+    if isinstance(raw, datetime):
+        return raw.date().isoformat()
+    if isinstance(raw, date):
+        return raw.isoformat()
     raw = (raw or '').strip()
     for fmt in DATE_FORMATS:
         try:
@@ -36,6 +43,8 @@ def _normalize_date(raw):
 def _parse_amount(raw):
     if raw is None:
         return None
+    if isinstance(raw, (int, float)):
+        return float(raw)
     s = str(raw).strip().replace(',', '').replace('₹', '').replace('Rs.', '').replace('Rs', '').strip()
     if not s:
         return None
@@ -61,6 +70,7 @@ def parse_rows(rows):
     desc_col = _find_col(headers, DESC_KEYS)
     amount_col = _find_col(headers, AMOUNT_KEYS)
     debit_col = _find_col(headers, DEBIT_KEYS)
+    tag_col = _find_col(headers, TAG_KEYS)
 
     if not date_col or not desc_col or not (amount_col or debit_col):
         raise StatementFormatError('Could not find date/description/amount columns')
@@ -83,7 +93,12 @@ def parse_rows(rows):
                 continue  # blank debit cell means this row was a credit
             amount = val
 
-        parsed.append({'date': date_str, 'description': description, 'amount': amount})
+        row_out = {'date': date_str, 'description': description, 'amount': amount}
+        if tag_col:
+            category = category_from_tag(row.get(tag_col))
+            if category:
+                row_out['category'] = category
+        parsed.append(row_out)
     return parsed
 
 
@@ -91,6 +106,25 @@ def parse_csv(file_bytes: bytes):
     text = file_bytes.decode('utf-8-sig', errors='ignore')
     rows = list(csv.DictReader(io.StringIO(text)))
     return parse_rows(rows)
+
+
+def parse_xlsx(file_bytes: bytes):
+    import openpyxl  # imported lazily: only needed for this one format
+
+    parsed = []
+    wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True, read_only=True)
+    for ws in wb.worksheets:
+        rows_iter = ws.iter_rows(values_only=True)
+        headers = next(rows_iter, None)
+        if not headers:
+            continue
+        headers = [str(h) if h is not None else '' for h in headers]
+        rows = [dict(zip(headers, raw_row)) for raw_row in rows_iter]
+        try:
+            parsed.extend(parse_rows(rows))
+        except StatementFormatError:
+            continue  # not every sheet (e.g. a summary tab) is the transactions table
+    return parsed
 
 
 def parse_pdf(file_bytes: bytes):
