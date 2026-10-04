@@ -3,184 +3,562 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Expense Tracker</title>
+<title>Expense Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
-  :root {
-    --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #e2e8f0;
-    --muted: #94a3b8; --warn: #fbbf24; --border: #334155;
-    --good: #34d399; --bad: #f87171;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; font-family: system-ui, -apple-system, sans-serif;
-    background: var(--bg); color: var(--text); padding: 1.5rem;
-  }
-  .wrap { max-width: 880px; margin: 0 auto; }
-  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-  .sub { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; font-size: 0.9rem; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
-  .card h2 { font-size: 1rem; margin: 0 0 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-  form { display: grid; gap: 0.6rem; }
-  .row2 { display: grid; grid-template-columns: 2fr 1fr; gap: 0.6rem; }
-  input, select, button {
-    background: #0f172a; border: 1px solid var(--border); color: var(--text);
-    padding: 0.55rem 0.7rem; border-radius: 6px; font-size: 0.95rem;
-  }
-  button { background: var(--accent); color: #0f172a; border: none; font-weight: 600; cursor: pointer; }
-  button:hover { opacity: 0.9; }
-  ul { list-style: none; margin: 0; padding: 0; }
-  #expense-list li {
-    display: grid; grid-template-columns: 2fr 1fr auto auto auto; gap: 0.5rem;
-    align-items: center; padding: 0.45rem 0; border-bottom: 1px solid var(--border); font-size: 0.9rem;
-  }
-  #expense-list li:last-child { border-bottom: none; }
-  .cat { color: var(--accent); font-size: 0.8rem; }
-  .date { color: var(--muted); font-size: 0.8rem; }
-  .delete { background: transparent; color: var(--muted); padding: 0 0.4rem; font-size: 1.1rem; }
-  #insights li { padding: 0.5rem 0.75rem; background: rgba(251, 191, 36, 0.1); border-left: 3px solid var(--warn); border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.88rem; }
-  #insights .muted { background: transparent; border-left-color: var(--border); color: var(--muted); }
-  .muted { color: var(--muted); font-size: 0.88rem; }
+:root{
+  --background:#FAFAFD;
+  --surface:#FFFFFF;
+  --surface-soft:#F1F0F8;
+  --surface-raised:#E9E7F6;
+  --border:#E1DFF0;
+  --border-soft:#EAE8F5;
+  --text:#090816;
+  --text-dim:#5E5B76;
+  --text-faint:#9A97AC;
 
-  .import-row { display: grid; grid-template-columns: 1fr auto; gap: 0.6rem; }
-  #import-file { padding: 0.45rem 0.6rem; }
-  #import-status { margin: 0.6rem 0 0; font-size: 0.85rem; }
-  #import-status.error { color: var(--bad); }
+  --primary:#5452C0;
+  --secondary:#A3A2C8;
+  --accent:#B08DBC;
+  --secondary-deep:#6B6894;
+  --accent-deep:#8E5F98;
 
-  /* Overview */
-  .range-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-  .range-btn { background: #0f172a; border: 1px solid var(--border); color: var(--muted); padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-  .range-btn:hover { border-color: var(--accent); }
-  .range-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 0.9rem; }
-  .stat-tile { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 0.9rem; }
-  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
-  .stat-value { font-size: 1.4rem; font-weight: 700; margin-top: 0.2rem; }
+  --good:#2F9E6B;
+  --bad:#D5566B;
+  --caution:#C9992B;
 
-  /* Trend chart + month cards */
-  .trend-svg-el { width: 100%; height: 130px; display: block; }
-  .trend-line { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .trend-area { fill: var(--accent); opacity: 0.12; stroke: none; }
-  .trend-dot { fill: var(--bg); stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: pointer; }
-  .trend-dot.selected { fill: var(--warn); stroke: var(--warn); }
-  .trend-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 1rem; }
+  --radius-lg:22px;
+  --radius-md:14px;
+  --radius-sm:10px;
+  --shadow:0 20px 40px -24px rgba(9,8,22,.18);
+  --font-display:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-body:'Figtree','Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
 
-  .month-stage { position: relative; height: 150px; margin-top: 0.4rem; perspective: 900px; overflow: hidden; }
-  .month-deck { position: absolute; inset: 0; transform-style: preserve-3d; }
-  .month-nav { position: absolute; top: 50%; margin-top: -15px; width: 30px; height: 30px; border-radius: 50%; background: #0f172a; border: 1px solid var(--border); color: var(--text); font-size: 1rem; line-height: 1; cursor: pointer; z-index: 10; }
-  #month-prev { left: 4px; }
-  #month-next { right: 4px; }
-  .month-nav:hover:not(:disabled) { border-color: var(--accent); }
-  .month-nav:disabled { opacity: 0.3; cursor: default; }
-  .month-card {
-    position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px;
-    background: #0f172a; border: 1px solid var(--border); border-radius: 10px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s, border-color 0.2s;
-  }
-  .month-card.active { border-color: var(--accent); box-shadow: 0 0 20px rgba(56, 189, 248, 0.35); }
-  .month-card-label { font-size: 0.72rem; color: var(--muted); }
-  .month-card-amt { font-size: 1rem; font-weight: 700; margin-top: 0.2rem; }
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--background);
+  color:var(--text);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;text-wrap:balance;}
+p{margin:0;}
+button,input,select{font-family:inherit;color:inherit;}
+button{cursor:pointer;}
+a{color:inherit;}
+.num{font-variant-numeric:tabular-nums;}
+::selection{background:var(--accent-deep);color:#fff;}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px;}
 
-  /* Month breakdown */
-  .breakdown-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-  .breakdown-title { font-size: 0.85rem; color: var(--muted); }
-  .delta { font-size: 0.78rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }
-  .delta.up { color: var(--bad); background: rgba(248, 113, 113, 0.12); }
-  .delta.down { color: var(--good); background: rgba(52, 211, 153, 0.12); }
+main{max-width:1120px;margin:0 auto;padding:0 20px;}
+.screen{padding-block:32px 64px;}
+.screen[hidden]{display:none;}
 
-  .donut-wrap { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-  .donut { width: 130px; height: 130px; border-radius: 50%; position: relative; flex-shrink: 0; }
-  .donut-center { position: absolute; inset: 18%; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; text-align: center; padding: 0.25rem; }
-  .legend { flex: 1; min-width: 180px; display: grid; gap: 0.45rem; }
-  .legend-row { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
-  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
-  .legend-amt { color: var(--muted); font-size: 0.8rem; }
+/* ---------- shared logo mark ---------- */
+.logo-mark{width:38px;height:38px;flex-shrink:0;}
+.wordmark{font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:-.01em;}
 
-  .breakdown-subtitle { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; }
-  .top-tx-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.88rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
-  .top-tx-row:last-child { border-bottom: none; }
+/* ---------- auth screens ---------- */
+.auth-shell{
+  min-height:70vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:28px;
+  padding-block:40px;
+}
+.auth-brand{display:flex;align-items:center;gap:10px;}
+.auth-card{
+  width:100%;
+  max-width:408px;
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow);
+  padding:32px 30px 28px;
+}
+.auth-card h1{font-size:24px;margin-bottom:6px;}
+.auth-card .sub{color:var(--text-dim);font-size:14px;margin-bottom:24px;}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.field label{font-size:13px;font-weight:700;color:var(--text-dim);}
+.field input,.field select{
+  background:var(--surface-soft);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:11px 13px;
+  font-size:14.5px;
+  color:var(--text);
+}
+.field input::placeholder{color:var(--text-faint);}
+.field input:focus,.field select:focus{border-color:var(--primary);}
+.field .hint{font-size:12px;color:var(--text-faint);}
+.btn-primary{
+  width:100%;
+  border:none;
+  border-radius:var(--radius-sm);
+  padding:12.5px 0;
+  font-weight:800;
+  font-size:14.5px;
+  font-family:var(--font-display);
+  background:linear-gradient(120deg,var(--primary),var(--accent-deep));
+  color:#FFFFFF;
+  box-shadow:0 10px 24px -10px rgba(84,82,192,.45);
+  transition:transform .12s, box-shadow .12s;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 14px 28px -10px rgba(84,82,192,.55);}
+.btn-primary:active{transform:translateY(0);}
+.auth-footer{margin-top:18px;text-align:center;font-size:13.5px;color:var(--text-dim);}
+.auth-footer .link{color:var(--primary);font-weight:700;background:none;border:none;padding:0;text-decoration:underline;text-decoration-color:rgba(84,82,192,.35);}
+.error-banner{
+  display:flex;gap:9px;align-items:flex-start;
+  background:rgba(213,86,107,.08);
+  border:1px solid rgba(213,86,107,.3);
+  color:#8F2F43;
+  border-radius:var(--radius-sm);
+  padding:11px 13px;
+  font-size:13.5px;
+  margin-bottom:18px;
+  line-height:1.4;
+}
+.error-banner[hidden]{display:none;}
+.error-banner svg{flex-shrink:0;margin-top:1px;}
 
-  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-  #logout-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-weight: 500; font-size: 0.82rem; white-space: nowrap; }
-  #logout-btn:hover { border-color: var(--accent); color: var(--text); opacity: 1; }
-  #app-error { display: none; background: rgba(248, 113, 113, 0.12); border: 1px solid var(--bad); color: var(--bad); border-radius: 8px; padding: 0.7rem 1rem; margin-bottom: 1.25rem; font-size: 0.88rem; }
-  #app-error.visible { display: block; }
+/* ---------- dashboard ---------- */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding-block:28px 24px;
+  flex-wrap:wrap;
+}
+.topbar .brand-block{display:flex;align-items:center;gap:12px;}
+.topbar .brand-text .tagline{font-size:13px;color:var(--text-dim);margin-top:2px;}
+.topbar .user-block{display:flex;align-items:center;gap:14px;}
+.topbar .user-email{font-size:13.5px;color:var(--text-dim);}
+.btn-ghost{
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-weight:700;
+  font-size:13px;
+  padding:9px 16px;
+  border-radius:var(--radius-sm);
+  font-family:var(--font-display);
+  transition:border-color .15s,background .15s;
+}
+.btn-ghost:hover{border-color:var(--bad);background:var(--surface-soft);}
 
-  @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
-  .skeleton { background: linear-gradient(90deg, #0f172a 25%, #233045 37%, #0f172a 63%); background-size: 400px 100%; animation: shimmer 1.4s infinite linear; border-radius: 6px; }
-  .skeleton-line { height: 0.9rem; margin: 0.4rem 0; }
-  .skeleton-tile { height: 58px; }
+.grid-cards{display:grid;gap:18px;}
+.cards-2col{grid-template-columns:1fr 1fr;}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);
+  padding:22px 22px 24px;
+  box-shadow:var(--shadow);
+}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.card-head h3{font-size:16px;}
+.card-head .meta{font-size:12.5px;color:var(--text-faint);}
+
+.section-gap{margin-top:18px;}
+
+.row-2{display:flex;gap:14px;}
+.row-2 > *{flex:1;min-width:0;}
+
+.select-wrap select{width:100%;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--text-dim) 50%),linear-gradient(135deg,var(--text-dim) 50%,transparent 50%);background-position:calc(100% - 18px) center,calc(100% - 13px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat;}
+
+.import-row{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;}
+.file-input-label{
+  flex:1;
+  min-width:180px;
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface-soft);
+  border:1px dashed var(--border);
+  border-radius:var(--radius-sm);
+  padding:11px 13px;
+  font-size:13.5px;
+  color:var(--text-dim);
+  cursor:pointer;
+}
+.file-input-label:hover{border-color:var(--primary);}
+.file-input-label input{display:none;}
+.file-input-label .fname{color:var(--text);font-weight:600;}
+.btn-import{
+  border:none;border-radius:var(--radius-sm);
+  background:var(--surface-raised);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:var(--font-display);
+  font-weight:800;font-size:13.5px;
+  padding:0 20px;
+  transition:border-color .15s,color .15s;
+}
+.btn-import:not(:disabled):hover{border-color:var(--good);color:var(--good);}
+.btn-import:disabled{opacity:.45;cursor:not-allowed;}
+.import-status{margin-top:12px;font-size:13px;color:var(--text-faint);}
+.import-status.ok{color:var(--good);}
+.import-status.error{color:var(--bad);}
+
+.pill-filter{display:flex;gap:6px;background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:999px;padding:4px;width:fit-content;}
+.pill-filter button{border:none;background:transparent;color:var(--text-dim);font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:999px;font-family:var(--font-display);}
+.pill-filter button.active{background:var(--surface-raised);color:var(--text);box-shadow:inset 0 0 0 1px var(--border);}
+
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px;}
+.stat-tile{background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:var(--radius-md);padding:15px 16px;}
+.stat-tile .label{font-size:12px;color:var(--text-faint);font-weight:600;}
+.stat-tile .value{font-family:var(--font-display);font-size:22px;font-weight:800;margin-top:6px;}
+.stat-tile .value.accent-primary{color:var(--primary);}
+.stat-tile .value.accent-deep{color:var(--accent-deep);}
+.stat-tile .value.accent-secondary{color:var(--secondary-deep);}
+.stat-tile .value.accent-good{color:var(--good);}
+
+.chart-wrap{margin-top:4px;}
+.chart-wrap svg{width:100%;height:auto;display:block;overflow:visible;}
+.chart-point{cursor:pointer;}
+.chart-point circle{transition:r .12s;}
+.chart-point:hover circle,.chart-point.selected circle{r:6;}
+
+/* ---------- 3D wave month selector ---------- */
+.wave-stage{
+  position:relative;
+  height:220px;
+  margin-top:16px;
+  perspective:1000px;
+  perspective-origin:50% 40%;
+  overflow:hidden;
+}
+.wave-deck{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transform-style:preserve-3d;
+}
+.wave-card{
+  position:absolute;
+  width:112px;
+  height:142px;
+  border-radius:16px;
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  box-shadow:0 14px 26px -16px rgba(9,8,22,.2);
+  padding:14px 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+  transform-style:preserve-3d;
+  backface-visibility:hidden;
+  transition:box-shadow .25s,border-color .25s;
+}
+.wave-card .wc-dot{width:9px;height:9px;border-radius:50%;}
+.wave-card .wc-month{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);}
+.wave-card .wc-amt{font-family:var(--font-display);font-weight:800;font-size:14.5px;color:var(--text);}
+.wave-card.active{border-color:var(--primary);box-shadow:0 0 0 3px rgba(84,82,192,.14),0 18px 30px -14px rgba(84,82,192,.35);}
+.wave-nav{
+  position:absolute;
+  top:50%;
+  margin-top:-18px;
+  width:36px;height:36px;
+  border-radius:50%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-dim);
+  z-index:20;
+  transition:border-color .15s,color .15s;
+  box-shadow:var(--shadow);
+}
+.wave-nav:hover{border-color:var(--primary);color:var(--primary);}
+.wave-nav:disabled{opacity:.35;cursor:default;}
+.wave-nav.prev{left:4px;}
+.wave-nav.next{right:4px;}
+
+.breakdown-layout{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;}
+.change-badge{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:999px;font-family:var(--font-display);}
+.change-badge.up{background:rgba(213,86,107,.12);color:var(--bad);}
+.change-badge.down{background:rgba(47,158,107,.12);color:var(--good);}
+.month-total{font-family:var(--font-display);font-size:26px;font-weight:800;}
+
+.donut-block{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;flex:1;min-width:160px;}
+.legend li{display:flex;align-items:center;gap:9px;font-size:13px;padding:4px 6px;border-radius:8px;transition:background .12s;}
+.legend li:hover{background:var(--surface-soft);}
+.legend .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.legend .name{flex:1;color:var(--text-dim);}
+.legend .amt{font-weight:700;}
+.legend .pct{color:var(--text-faint);width:38px;text-align:right;}
+
+.tx-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;}
+.tx-row{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--border-soft);}
+.tx-row:last-child{border-bottom:none;}
+.tx-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.tx-desc{flex:1;min-width:0;}
+.tx-desc .d{font-size:14px;font-weight:600;}
+.tx-desc .d-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+.tx-date{font-size:12px;color:var(--text-faint);margin-top:2px;}
+.tx-amount{font-family:var(--font-display);font-weight:800;font-size:14.5px;white-space:nowrap;}
+.tx-del{background:none;border:none;color:var(--text-faint);font-size:16px;line-height:1;padding:6px;border-radius:8px;flex-shrink:0;}
+.tx-del:hover{color:var(--bad);background:rgba(213,86,107,.08);}
+
+.insight-list{display:flex;flex-direction:column;gap:12px;}
+.insight{display:flex;gap:12px;padding:13px 14px;border-radius:var(--radius-md);border:1px solid var(--border-soft);background:var(--surface-soft);}
+.insight .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;}
+.insight .ic.warn{background:rgba(213,86,107,.12);color:var(--bad);}
+.insight .ic.caution{background:rgba(201,153,43,.14);color:var(--caution);}
+.insight .ic.good{background:rgba(47,158,107,.12);color:var(--good);}
+.insight p{font-size:13.5px;color:var(--text-dim);line-height:1.5;}
+.muted{color:var(--text-faint);font-size:13.5px;}
+
+/* ---------- responsive ---------- */
+@media (max-width:860px){
+  .cards-2col,.breakdown-layout{grid-template-columns:1fr;}
+  .stat-row{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:540px){
+  .row-2{flex-direction:column;}
+  .topbar{align-items:flex-start;}
+  .stat-row{grid-template-columns:1fr 1fr;}
+  .donut-block{flex-direction:column;align-items:stretch;}
+  .wave-card{width:96px;height:128px;}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="topbar">
-    <div>
-      <h1>💸 Expense Tracker</h1>
-      <p class="sub">Log a spend, it auto-categorizes itself. Patterns worth noticing show up below.</p>
-    </div>
-    <button type="button" id="logout-btn">Log out</button>
-  </div>
-  <p id="app-error"></p>
 
-  <div class="card">
-    <h2>Add expense</h2>
-    <form id="expense-form">
-      <input id="description" placeholder="e.g. Swiggy dinner, bus fare, Netflix" autocomplete="off" required>
-      <div class="row2">
-        <input id="amount" type="number" step="0.01" min="0.01" placeholder="Amount (₹)" required>
-        <input id="date" type="date" required>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="logo-mark" viewBox="0 0 40 40">
+      <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+        <stop offset="0" stop-color="#5452C0"/>
+        <stop offset=".5" stop-color="#8E5F98"/>
+        <stop offset="1" stop-color="#A3A2C8"/>
+      </linearGradient>
+      <rect width="40" height="40" rx="12" fill="url(#logoGrad)"/>
+      <circle cx="15" cy="25" r="8.5" fill="#090816" opacity=".15"/>
+      <circle cx="15" cy="24" r="8" fill="#fff" opacity=".94"/>
+      <circle cx="25" cy="16" r="8" fill="#fff" opacity=".62"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main>
+
+  <!-- ===================== SIGN UP ===================== -->
+  <section id="screen-signup" class="screen">
+    <div class="auth-shell">
+      <div class="auth-brand">
+        <svg class="logo-mark"><use href="#logo-mark"/></svg>
+        <span class="wordmark">Expense Tracker</span>
       </div>
-      <select id="category">
-        <option>Food & Dining</option><option>Groceries</option><option>Transport</option>
-        <option>Housing</option><option>Education</option><option>Entertainment</option>
-        <option>Subscriptions</option><option>Shopping</option><option>Health</option>
-        <option>Utilities</option><option>Other</option>
-      </select>
-      <button type="submit">Add expense</button>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>Import bank statement</h2>
-    <form id="import-form" class="import-row">
-      <input type="file" id="import-file" accept=".csv,.pdf,.xlsx" required>
-      <button type="submit">Import</button>
-    </form>
-    <p id="import-status"></p>
-  </div>
-
-  <div class="card">
-    <h2>Overview</h2>
-    <div id="range-row" class="range-row"></div>
-    <div id="stat-grid" class="stat-grid"></div>
-  </div>
-
-  <div class="card">
-    <h2>Monthly trend</h2>
-    <div id="month-trend"></div>
-    <div class="month-stage">
-      <button id="month-prev" type="button" class="month-nav" aria-label="Previous month">‹</button>
-      <div id="month-deck" class="month-deck"></div>
-      <button id="month-next" type="button" class="month-nav" aria-label="Next month">›</button>
+      <div class="auth-card">
+        <h1>Create your account</h1>
+        <p class="sub">Track your spending in less time than it takes to order coffee.</p>
+        <div class="error-banner" id="signup-error" hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.3" r=".9" fill="currentColor"/></svg>
+          <span id="signup-error-text"></span>
+        </div>
+        <form id="signup-form" novalidate>
+          <div class="field">
+            <label for="signup-email">Email</label>
+            <input id="signup-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="signup-password">Password</label>
+            <input id="signup-password" name="password" type="password" placeholder="••••••••" autocomplete="new-password" required>
+            <span class="hint">At least 8 characters</span>
+          </div>
+          <button type="submit" class="btn-primary">Create account</button>
+        </form>
+        <div class="auth-footer">Already have an account? <button type="button" class="link" data-goto="signin">Sign in</button></div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>Month breakdown</h2>
-    <div id="month-breakdown"></div>
-  </div>
+  <!-- ===================== SIGN IN ===================== -->
+  <section id="screen-signin" class="screen" hidden>
+    <div class="auth-shell">
+      <div class="auth-brand">
+        <svg class="logo-mark"><use href="#logo-mark"/></svg>
+        <span class="wordmark">Expense Tracker</span>
+      </div>
+      <div class="auth-card">
+        <h1>Welcome back</h1>
+        <p class="sub">Sign in to see where this month's money went.</p>
+        <div class="error-banner" id="signin-error" hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.5V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.3" r=".9" fill="currentColor"/></svg>
+          <span id="signin-error-text"></span>
+        </div>
+        <form id="signin-form" novalidate>
+          <div class="field">
+            <label for="signin-email">Email</label>
+            <input id="signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="signin-password">Password</label>
+            <input id="signin-password" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+          </div>
+          <button type="submit" class="btn-primary">Sign in</button>
+        </form>
+        <div class="auth-footer">Don't have an account? <button type="button" class="link" data-goto="signup">Sign up</button></div>
+      </div>
+    </div>
+  </section>
 
-  <div class="card">
-    <h2>Unusual spending</h2>
-    <ul id="insights"></ul>
-  </div>
+  <!-- ===================== DASHBOARD ===================== -->
+  <section id="screen-dashboard" class="screen" hidden>
 
-  <div class="card">
-    <h2>Recent transactions</h2>
-    <ul id="expense-list"></ul>
-  </div>
-</div>
+    <div class="topbar">
+      <div class="brand-block">
+        <svg class="logo-mark"><use href="#logo-mark"/></svg>
+        <div class="brand-text">
+          <h2>Expense Tracker</h2>
+          <div class="tagline">Track what you spend. Spend what matters.</div>
+        </div>
+      </div>
+      <div class="user-block">
+        <span class="user-email" id="current-email"></span>
+        <button class="btn-ghost" id="logout-btn">Log out</button>
+      </div>
+    </div>
+
+    <div class="grid-cards cards-2col">
+      <!-- Add expense -->
+      <div class="card">
+        <div class="card-head"><h3>Add expense</h3></div>
+        <form id="add-expense-form">
+          <div class="field">
+            <label for="exp-desc">Description</label>
+            <input id="exp-desc" type="text" placeholder="e.g. Swiggy dinner, bus fare, Netflix" autocomplete="off" required>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="exp-amount">Amount (₹)</label>
+              <input id="exp-amount" type="number" min="0.01" step="0.01" placeholder="0" required>
+            </div>
+            <div class="field">
+              <label for="exp-date">Date</label>
+              <input id="exp-date" type="date" required>
+            </div>
+          </div>
+          <div class="field select-wrap">
+            <label for="exp-category">Category</label>
+            <select id="exp-category">
+              <option>Food &amp; Dining</option>
+              <option>Groceries</option>
+              <option>Transport</option>
+              <option>Housing</option>
+              <option>Education</option>
+              <option>Entertainment</option>
+              <option>Subscriptions</option>
+              <option>Shopping</option>
+              <option>Health</option>
+              <option>Utilities</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary">Add expense</button>
+        </form>
+      </div>
+
+      <!-- Import bank statement -->
+      <div class="card">
+        <div class="card-head"><h3>Import bank statement</h3></div>
+        <p class="sub" style="color:var(--text-dim);font-size:13.5px;margin-bottom:16px;">Upload a CSV, PDF, or Excel statement — we'll tag each transaction by category automatically.</p>
+        <form id="import-form">
+          <div class="import-row">
+            <label class="file-input-label" for="import-file">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M12 15V4m0 0L8 8m4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span class="fname" id="import-filename">Choose .csv, .pdf or .xlsx</span>
+              <input id="import-file" type="file" accept=".csv,.pdf,.xlsx" required>
+            </label>
+            <button class="btn-import" id="import-btn" type="submit">Import</button>
+          </div>
+        </form>
+        <div class="import-status" id="import-status"></div>
+      </div>
+    </div>
+
+    <!-- Overview -->
+    <div class="card section-gap">
+      <div class="card-head">
+        <h3>Overview</h3>
+        <div class="pill-filter" id="range-filter" role="tablist" aria-label="Date range">
+          <button data-range="3">3M</button>
+          <button data-range="6">6M</button>
+          <button data-range="12">12M</button>
+          <button data-range="all" class="active">All time</button>
+        </div>
+      </div>
+      <div class="stat-row" id="stat-row">
+        <div class="stat-tile"><div class="label">Total spent</div><div class="value accent-primary num" id="stat-total">—</div></div>
+        <div class="stat-tile"><div class="label">Monthly average</div><div class="value accent-deep num" id="stat-avg">—</div></div>
+        <div class="stat-tile"><div class="label">Top category</div><div class="value accent-secondary" id="stat-top">—</div></div>
+        <div class="stat-tile"><div class="label">Transactions</div><div class="value accent-good num" id="stat-count">—</div></div>
+      </div>
+    </div>
+
+    <!-- Monthly trend -->
+    <div class="card section-gap">
+      <div class="card-head"><h3>Monthly trend</h3><span class="meta">Click a point or a card below</span></div>
+      <div class="chart-wrap" id="chart-wrap"></div>
+      <div class="wave-stage" id="wave-stage">
+        <button class="wave-nav prev" id="wave-prev" type="button" aria-label="Previous month">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="wave-deck" id="wave-deck"></div>
+        <button class="wave-nav next" id="wave-next" type="button" aria-label="Next month">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Month breakdown + Unusual spending -->
+    <div class="breakdown-layout section-gap">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="month-total num" id="breakdown-total">—</div>
+          </div>
+          <span class="change-badge" id="breakdown-change"></span>
+        </div>
+        <p class="muted" id="breakdown-empty" hidden>Log an expense to see a monthly breakdown.</p>
+        <div id="breakdown-content">
+          <h3 style="font-size:14px;color:var(--text-dim);margin-bottom:10px;font-weight:700;">Spend by category</h3>
+          <div class="donut-block">
+            <svg id="donut-svg" width="150" height="150" viewBox="0 0 150 150" style="flex-shrink:0"></svg>
+            <ul class="legend" id="donut-legend"></ul>
+          </div>
+          <h3 style="font-size:14px;color:var(--text-dim);margin:20px 0 6px;font-weight:700;">Largest transactions</h3>
+          <ul class="tx-list" id="largest-tx-list"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Unusual spending</h3></div>
+        <div class="insight-list" id="insight-list"></div>
+      </div>
+    </div>
+
+    <!-- Recent transactions -->
+    <div class="card section-gap">
+      <div class="card-head"><h3>Recent transactions</h3></div>
+      <ul class="tx-list" id="recent-tx-list"></ul>
+    </div>
+
+  </section>
+</main>
 <script src="app.js"></script>
 </body>
 </html>
