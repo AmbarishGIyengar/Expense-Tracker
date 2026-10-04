@@ -1,2 +1,17 @@
+[project]
+name = "expense-tracker"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlmodel",
+    "python-multipart",
+    "pdfplumber",
+    "openpyxl",
+    "itsdangerous",
+    "psycopg[binary]",
+]
+
 [tool.vercel]
 entrypoint = "backend.main:app"
