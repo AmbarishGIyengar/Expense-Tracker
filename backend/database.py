@@ -2,7 +2,19 @@ import os
 
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "sqlite:///./expense_tracker.db"
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+if not DATABASE_URL:
+    if os.environ.get("VERCEL"):
+        # Vercel's serverless filesystem doesn't persist across invocations/cold
+        # starts, so a silent SQLite fallback here means every import looks like
+        # it worked and then vanishes on the next request. Fail loudly instead.
+        raise RuntimeError(
+            "DATABASE_URL/POSTGRES_URL is not set. On Vercel, SQLite writes don't "
+            "survive between requests, so data would silently disappear. Add a "
+            "Postgres database (Vercel dashboard -> Storage -> Postgres, or the "
+            "Neon integration) to this project so DATABASE_URL gets set."
+        )
+    DATABASE_URL = "sqlite:///./expense_tracker.db"
 # Neon/Vercel hand out "postgres://" or "postgresql://"; SQLAlchemy needs the psycopg dialect spelled out.
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)

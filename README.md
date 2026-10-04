@@ -46,6 +46,19 @@ Open http://localhost:8000 — the frontend is served from the same app, API
 routes live under `/api`. Data persists to `expense_tracker.db` (SQLite,
 gitignored, created automatically on first run).
 
+## Deploying on Vercel
+
+Vercel's serverless functions don't persist a local SQLite file across
+requests, so the backend requires a real Postgres database there:
+
+1. In the Vercel project, go to **Storage** and add a **Postgres** database
+   (or the Neon integration) — this sets `DATABASE_URL`/`POSTGRES_URL`
+   automatically.
+2. Without that env var set, the app now refuses to start on Vercel (it
+   raises at startup) instead of silently falling back to a SQLite file
+   that resets on every cold start — which previously showed up as
+   "uploads succeed but the data reverts to the previous version."
+
 ## Tests
 
 ```bash
