@@ -8,13 +8,14 @@
   :root {
     --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #e2e8f0;
     --muted: #94a3b8; --warn: #fbbf24; --border: #334155;
+    --good: #34d399; --bad: #f87171;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: system-ui, -apple-system, sans-serif;
     background: var(--bg); color: var(--text); padding: 1.5rem;
   }
-  .wrap { max-width: 640px; margin: 0 auto; }
+  .wrap { max-width: 880px; margin: 0 auto; }
   h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
   .sub { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; font-size: 0.9rem; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
@@ -27,7 +28,6 @@
   }
   button { background: var(--accent); color: #0f172a; border: none; font-weight: 600; cursor: pointer; }
   button:hover { opacity: 0.9; }
-  .total-line { font-size: 1.6rem; font-weight: 700; }
   ul { list-style: none; margin: 0; padding: 0; }
   #expense-list li {
     display: grid; grid-template-columns: 2fr 1fr auto auto auto; gap: 0.5rem;
@@ -37,33 +37,58 @@
   .cat { color: var(--accent); font-size: 0.8rem; }
   .date { color: var(--muted); font-size: 0.8rem; }
   .delete { background: transparent; color: var(--muted); padding: 0 0.4rem; font-size: 1.1rem; }
-  .cat-row { margin-bottom: 0.6rem; }
-  .cat-row-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem; }
-  .bar { background: #0f172a; border-radius: 4px; height: 8px; overflow: hidden; }
-  .bar-fill { background: var(--accent); height: 100%; }
   #insights li { padding: 0.5rem 0.75rem; background: rgba(251, 191, 36, 0.1); border-left: 3px solid var(--warn); border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.88rem; }
   #insights .muted { background: transparent; border-left-color: var(--border); color: var(--muted); }
   .muted { color: var(--muted); font-size: 0.88rem; }
 
-  .trend-chart { display: flex; align-items: flex-end; gap: 0.4rem; height: 70px; margin-bottom: 1rem; }
-  .trend-bar { flex: 1; display: flex; align-items: flex-end; height: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; cursor: pointer; }
-  .trend-bar-fill { width: 100%; min-height: 2px; background: var(--accent); transition: height 0.15s, background 0.15s; }
-  .trend-bar.selected { border-color: var(--accent); }
-  .trend-bar.selected .trend-bar-fill { background: var(--warn); }
+  .import-row { display: grid; grid-template-columns: 1fr auto; gap: 0.6rem; }
+  #import-file { padding: 0.45rem 0.6rem; }
+  #import-status { margin: 0.6rem 0 0; font-size: 0.85rem; }
+  #import-status.error { color: var(--bad); }
 
-  .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+  /* Overview */
+  .range-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .range-btn { background: #0f172a; border: 1px solid var(--border); color: var(--muted); padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+  .range-btn:hover { border-color: var(--accent); }
+  .range-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-top: 0.9rem; }
+  .stat-tile { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 0.9rem; }
+  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .stat-value { font-size: 1.4rem; font-weight: 700; margin-top: 0.2rem; }
+
+  /* Trend chart + month cards */
+  .trend-svg-el { width: 100%; height: 130px; display: block; }
+  .trend-line { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .trend-area { fill: var(--accent); opacity: 0.12; stroke: none; }
+  .trend-dot { fill: var(--bg); stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: pointer; }
+  .trend-dot.selected { fill: var(--warn); stroke: var(--warn); }
+  .trend-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 1rem; }
+
+  .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.6rem; }
   .month-card { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
   .month-card:hover { border-color: var(--accent); }
   .month-card.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.1); }
   .month-card-label { font-size: 0.78rem; color: var(--muted); }
   .month-card-amt { font-size: 1.1rem; font-weight: 700; margin-top: 0.15rem; }
 
-  .breakdown-title { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; }
+  /* Month breakdown */
+  .breakdown-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .breakdown-title { font-size: 0.85rem; color: var(--muted); }
+  .delta { font-size: 0.78rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }
+  .delta.up { color: var(--bad); background: rgba(248, 113, 113, 0.12); }
+  .delta.down { color: var(--good); background: rgba(52, 211, 153, 0.12); }
 
-  .import-row { display: grid; grid-template-columns: 1fr auto; gap: 0.6rem; }
-  #import-file { padding: 0.45rem 0.6rem; }
-  #import-status { margin: 0.6rem 0 0; font-size: 0.85rem; }
-  #import-status.error { color: #fca5a5; }
+  .donut-wrap { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .donut { width: 130px; height: 130px; border-radius: 50%; position: relative; flex-shrink: 0; }
+  .donut-center { position: absolute; inset: 18%; background: var(--card); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; text-align: center; padding: 0.25rem; }
+  .legend { flex: 1; min-width: 180px; display: grid; gap: 0.45rem; }
+  .legend-row { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-amt { color: var(--muted); font-size: 0.8rem; }
+
+  .breakdown-subtitle { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; }
+  .top-tx-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.88rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+  .top-tx-row:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
@@ -99,25 +124,25 @@
   </div>
 
   <div class="card">
-    <h2>Monthly spending</h2>
-    <div id="month-trend" class="trend-chart"></div>
+    <h2>Overview</h2>
+    <div id="range-row" class="range-row"></div>
+    <div id="stat-grid" class="stat-grid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Monthly trend</h2>
+    <div id="month-trend"></div>
     <div id="month-cards" class="month-grid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Month breakdown</h2>
     <div id="month-breakdown"></div>
   </div>
 
   <div class="card">
     <h2>Unusual spending</h2>
     <ul id="insights"></ul>
-  </div>
-
-  <div class="card">
-    <h2>Total spent</h2>
-    <div class="total-line" id="month-total">₹0</div>
-  </div>
-
-  <div class="card">
-    <h2>By category</h2>
-    <div id="category-totals"></div>
   </div>
 
   <div class="card">

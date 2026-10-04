@@ -95,15 +95,51 @@ function monthLabel(key) {
   return `${MONTH_NAMES[m - 1]} ${y}`;
 }
 
+function prevMonthKey(key) {
+  const [y, m] = key.split('-').map(Number);
+  const d = new Date(y, m - 2, 1); // m is 1-indexed; m-2 lands on the previous month
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// null when there's nothing to compare against (avoids a misleading "+Infinity%").
+function percentChange(current, previous) {
+  if (!previous) return null;
+  return Math.round((current / previous - 1) * 100);
+}
+
+// monthTotals must be chronological (oldest -> newest), as monthlyTotals() returns.
+function monthsInRange(monthTotals, rangeKey) {
+  if (rangeKey === 'all') return monthTotals;
+  return monthTotals.slice(-Number(rangeKey));
+}
+
+const CATEGORY_COLORS = {
+  'Food & Dining': '#38bdf8', 'Groceries': '#34d399', 'Transport': '#fbbf24',
+  'Housing': '#f472b6', 'Education': '#a78bfa', 'Entertainment': '#fb923c',
+  'Subscriptions': '#22d3ee', 'Shopping': '#f87171', 'Health': '#4ade80',
+  'Utilities': '#facc15', 'Other': '#94a3b8',
+};
+function categoryColor(category) {
+  return CATEGORY_COLORS[category] || '#64748b';
+}
+
 if (typeof module !== 'undefined') {
-  module.exports = { categorize, monthKey, mean, computeInsights, categoryTotals, monthlyTotals, monthLabel, CATEGORY_RULES };
+  module.exports = {
+    categorize, monthKey, mean, computeInsights, categoryTotals, monthlyTotals, monthLabel,
+    prevMonthKey, percentChange, monthsInRange, categoryColor, CATEGORY_RULES,
+  };
 }
 
 // ---- DOM wiring (skipped entirely under Node/test) ----
 if (typeof document !== 'undefined') {
   const API_BASE = '/api/expenses';
+  const RANGES = [
+    { key: '3', label: '3M' }, { key: '6', label: '6M' },
+    { key: '12', label: '12M' }, { key: 'all', label: 'All time' },
+  ];
   let expenses = [];
   let selectedMonth = null;
+  let selectedRange = 'all';
 
   const form = document.getElementById('expense-form');
   const descInput = document.getElementById('description');
@@ -111,9 +147,9 @@ if (typeof document !== 'undefined') {
   const dateInput = document.getElementById('date');
   const categorySelect = document.getElementById('category');
   const listEl = document.getElementById('expense-list');
-  const totalsEl = document.getElementById('category-totals');
   const insightsEl = document.getElementById('insights');
-  const totalEl = document.getElementById('month-total');
+  const rangeRowEl = document.getElementById('range-row');
+  const statGridEl = document.getElementById('stat-grid');
   const trendEl = document.getElementById('month-trend');
   const monthCardsEl = document.getElementById('month-cards');
   const breakdownEl = document.getElementById('month-breakdown');
@@ -140,22 +176,7 @@ if (typeof document !== 'undefined') {
       listEl.appendChild(li);
     });
 
-    // Category breakdown bars
-    const totals = categoryTotals(expenses);
-    const grandTotal = totals.reduce((sum, [, amt]) => sum + amt, 0);
-    totalsEl.innerHTML = '';
-    for (const [category, amt] of totals) {
-      const pct = grandTotal ? (amt / grandTotal) * 100 : 0;
-      const row = document.createElement('div');
-      row.className = 'cat-row';
-      row.innerHTML = `
-        <div class="cat-row-label"><span>${category}</span><span>₹${amt.toFixed(0)}</span></div>
-        <div class="bar"><div class="bar-fill" style="width:${pct.toFixed(1)}%"></div></div>`;
-      totalsEl.appendChild(row);
-    }
-    totalEl.textContent = `₹${grandTotal.toFixed(0)}`;
-
-    renderMonths();
+    renderDashboard();
 
     // Insights
     const insights = computeInsights(expenses);
@@ -176,54 +197,163 @@ if (typeof document !== 'undefined') {
     render();
   }
 
-  // Trend chart (oldest -> newest), month cards (newest first), and a
-  // category breakdown for whichever month is selected.
-  function renderMonths() {
-    const totals = monthlyTotals(expenses);
-    if (!totals.some(([key]) => key === selectedMonth)) {
-      selectedMonth = totals.length ? totals[totals.length - 1][0] : null;
+  function selectRange(key) {
+    selectedRange = key;
+    render();
+  }
+
+  function renderDashboard() {
+    const allMonths = monthlyTotals(expenses); // chronological
+    if (!allMonths.some(([key]) => key === selectedMonth)) {
+      selectedMonth = allMonths.length ? allMonths[allMonths.length - 1][0] : null;
     }
 
-    const maxAmt = Math.max(0, ...totals.map(([, amt]) => amt));
-    trendEl.innerHTML = '';
-    for (const [key, amt] of totals) {
-      const bar = document.createElement('div');
-      bar.className = 'trend-bar' + (key === selectedMonth ? ' selected' : '');
-      bar.title = `${monthLabel(key)}: ₹${amt.toFixed(0)}`;
-      bar.innerHTML = `<div class="trend-bar-fill" style="height:${maxAmt ? (amt / maxAmt) * 100 : 0}%"></div>`;
-      bar.onclick = () => selectMonth(key);
-      trendEl.appendChild(bar);
-    }
+    const rangedMonths = monthsInRange(allMonths, selectedRange);
+    const rangedKeys = new Set(rangedMonths.map(([key]) => key));
+    const rangedExpenses = expenses.filter((e) => rangedKeys.has(monthKey(e.date)));
 
+    renderRangeButtons();
+    renderStats(rangedMonths, rangedExpenses);
+    renderTrend(rangedMonths);
+    renderMonthCards(rangedMonths);
+    renderBreakdown();
+  }
+
+  function renderRangeButtons() {
+    rangeRowEl.innerHTML = '';
+    for (const r of RANGES) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = r.label;
+      btn.className = 'range-btn' + (r.key === selectedRange ? ' active' : '');
+      btn.onclick = () => selectRange(r.key);
+      rangeRowEl.appendChild(btn);
+    }
+  }
+
+  function renderStats(rangedMonths, rangedExpenses) {
+    const total = rangedExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const avg = rangedMonths.length ? total / rangedMonths.length : 0;
+    const topCategory = categoryTotals(rangedExpenses)[0];
+    const stats = [
+      ['Total spent', `₹${total.toFixed(0)}`],
+      ['Monthly average', `₹${avg.toFixed(0)}`],
+      ['Top category', topCategory ? topCategory[0] : '—'],
+      ['Transactions', String(rangedExpenses.length)],
+    ];
+    statGridEl.innerHTML = stats.map(([label, value]) => `
+      <div class="stat-tile">
+        <div class="stat-label">${label}</div>
+        <div class="stat-value">${value}</div>
+      </div>`).join('');
+  }
+
+  // Line + area chart over the ranged months. viewBox is a fixed nominal
+  // size; vector-effect: non-scaling-stroke (CSS) keeps lines crisp as the
+  // SVG scales to its container, so no resize-handling JS is needed.
+  function renderTrend(months) {
+    if (!months.length) {
+      trendEl.innerHTML = '<p class="muted">Log an expense to see your trend.</p>';
+      return;
+    }
+    const W = 600, H = 140, PAD = 20;
+    const maxAmt = Math.max(...months.map(([, amt]) => amt), 1);
+    const stepX = months.length > 1 ? (W - PAD * 2) / (months.length - 1) : 0;
+    const points = months.map(([key, amt], i) => ({
+      key, amt,
+      x: PAD + i * stepX,
+      y: H - PAD - (amt / maxAmt) * (H - PAD * 2),
+    }));
+
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const last = points[points.length - 1];
+    const areaPath = `${linePath} L${last.x.toFixed(1)},${H - PAD} L${points[0].x.toFixed(1)},${H - PAD} Z`;
+    const dots = points.map((p) => `
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.key === selectedMonth ? 5 : 3.5}"
+        class="trend-dot${p.key === selectedMonth ? ' selected' : ''}" data-key="${p.key}">
+        <title>${monthLabel(p.key)}: ₹${p.amt.toFixed(0)}</title>
+      </circle>`).join('');
+    const mid = points[Math.floor((points.length - 1) / 2)];
+
+    trendEl.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" class="trend-svg-el">
+        <path d="${areaPath}" class="trend-area"></path>
+        <path d="${linePath}" class="trend-line"></path>
+        ${dots}
+      </svg>
+      <div class="trend-labels">
+        <span>${monthLabel(points[0].key)}</span>
+        ${points.length > 2 ? `<span>${monthLabel(mid.key)}</span>` : ''}
+        <span>${monthLabel(last.key)}</span>
+      </div>`;
+    trendEl.querySelectorAll('circle').forEach((c) => c.addEventListener('click', () => selectMonth(c.dataset.key)));
+  }
+
+  function renderMonthCards(months) {
     monthCardsEl.innerHTML = '';
-    [...totals].reverse().forEach(([key, amt]) => {
+    [...months].reverse().forEach(([key, amt]) => {
       const card = document.createElement('div');
       card.className = 'month-card' + (key === selectedMonth ? ' selected' : '');
       card.innerHTML = `<div class="month-card-label">${monthLabel(key)}</div><div class="month-card-amt">₹${amt.toFixed(0)}</div>`;
       card.onclick = () => selectMonth(key);
       monthCardsEl.appendChild(card);
     });
+  }
 
-    breakdownEl.innerHTML = '';
+  function donutGradient(catTotals, total) {
+    let acc = 0;
+    const stops = catTotals.map(([category, amt]) => {
+      const start = (acc / total) * 100;
+      acc += amt;
+      return `${categoryColor(category)} ${start.toFixed(2)}% ${((acc / total) * 100).toFixed(2)}%`;
+    });
+    return `conic-gradient(${stops.join(', ')})`;
+  }
+
+  function renderBreakdown() {
     if (!selectedMonth) {
-      breakdownEl.innerHTML = '<p class="muted">Log an expense to see monthly trends.</p>';
+      breakdownEl.innerHTML = '<p class="muted">Log an expense to see a monthly breakdown.</p>';
       return;
     }
     const monthExpenses = expenses.filter((e) => monthKey(e.date) === selectedMonth);
     const monthTotal = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const title = document.createElement('div');
-    title.className = 'breakdown-title';
-    title.textContent = `${monthLabel(selectedMonth)} — ₹${monthTotal.toFixed(0)} across ${monthExpenses.length} transaction${monthExpenses.length === 1 ? '' : 's'}`;
-    breakdownEl.appendChild(title);
-    for (const [category, amt] of categoryTotals(monthExpenses)) {
-      const pct = monthTotal ? (amt / monthTotal) * 100 : 0;
-      const row = document.createElement('div');
-      row.className = 'cat-row';
-      row.innerHTML = `
-        <div class="cat-row-label"><span>${category}</span><span>₹${amt.toFixed(0)}</span></div>
-        <div class="bar"><div class="bar-fill" style="width:${pct.toFixed(1)}%"></div></div>`;
-      breakdownEl.appendChild(row);
+    const prevEntry = monthlyTotals(expenses).find(([key]) => key === prevMonthKey(selectedMonth));
+    const delta = percentChange(monthTotal, prevEntry ? prevEntry[1] : 0);
+    const deltaHtml = delta === null ? '' : `
+      <span class="delta ${delta > 0 ? 'up' : 'down'}">
+        ${delta > 0 ? '▲' : '▼'} ${Math.abs(delta)}% vs ${monthLabel(prevMonthKey(selectedMonth))}
+      </span>`;
+
+    let html = `
+      <div class="breakdown-header">
+        <div class="breakdown-title">${monthLabel(selectedMonth)} — ₹${monthTotal.toFixed(0)} across ${monthExpenses.length} transaction${monthExpenses.length === 1 ? '' : 's'}</div>
+        ${deltaHtml}
+      </div>`;
+
+    if (monthExpenses.length) {
+      const catTotals = categoryTotals(monthExpenses);
+      html += `
+        <div class="donut-wrap">
+          <div class="donut" style="background:${donutGradient(catTotals, monthTotal)}">
+            <div class="donut-center"><span>₹${monthTotal.toFixed(0)}</span></div>
+          </div>
+          <div class="legend">
+            ${catTotals.map(([category, amt]) => `
+              <div class="legend-row">
+                <span class="legend-swatch" style="background:${categoryColor(category)}"></span>
+                <span class="legend-label">${category}</span>
+                <span class="legend-amt">₹${amt.toFixed(0)} · ${((amt / monthTotal) * 100).toFixed(0)}%</span>
+              </div>`).join('')}
+          </div>
+        </div>`;
+
+      const top = [...monthExpenses].sort((a, b) => b.amount - a.amount).slice(0, 5);
+      html += `
+        <div class="breakdown-subtitle">Largest transactions</div>
+        ${top.map((e) => `<div class="top-tx-row"><span>${e.description}</span><span>₹${e.amount.toFixed(0)}</span></div>`).join('')}`;
     }
+
+    breakdownEl.innerHTML = html;
   }
 
   async function loadExpenses() {

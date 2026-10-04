@@ -1,5 +1,8 @@
 const assert = require('assert');
-const { categorize, computeInsights, categoryTotals, monthlyTotals, monthLabel } = require('./app.js');
+const {
+  categorize, computeInsights, categoryTotals, monthlyTotals, monthLabel,
+  prevMonthKey, percentChange, monthsInRange, categoryColor,
+} = require('./app.js');
 
 assert.strictEqual(categorize('Swiggy dinner'), 'Food & Dining');
 assert.strictEqual(categorize('Uber to campus'), 'Transport');
@@ -35,5 +38,19 @@ assert.deepStrictEqual(
   [['2026-09', 80], ['2026-10', 100]],
 );
 assert.strictEqual(monthLabel('2026-10'), 'Oct 2026');
+
+assert.strictEqual(prevMonthKey('2026-10'), '2026-09');
+assert.strictEqual(prevMonthKey('2026-01'), '2025-12'); // year rollover
+
+assert.strictEqual(percentChange(150, 100), 50);
+assert.strictEqual(percentChange(50, 100), -50);
+assert.strictEqual(percentChange(100, 0), null); // nothing to compare against
+
+const sixMonths = [['2026-05', 1], ['2026-06', 2], ['2026-07', 3], ['2026-08', 4], ['2026-09', 5], ['2026-10', 6]];
+assert.deepStrictEqual(monthsInRange(sixMonths, '3'), [['2026-08', 4], ['2026-09', 5], ['2026-10', 6]]);
+assert.deepStrictEqual(monthsInRange(sixMonths, 'all'), sixMonths);
+
+assert.strictEqual(categoryColor('Food & Dining'), '#38bdf8');
+assert.strictEqual(categoryColor('Something unknown'), '#64748b'); // fallback for unmapped categories
 
 console.log('all app.js self-checks passed');
