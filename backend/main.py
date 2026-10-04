@@ -62,7 +62,10 @@ async def import_statement(file: UploadFile = File(...), session: Session = Depe
     existing_hashes = set(session.exec(select(Expense.row_hash)).all())
     imported = 0
     for row in rows:
-        row_hash = hashlib.sha256(f"{row['date']}|{row['description']}|{row['amount']}".encode()).hexdigest()
+        # Prefer the statement's own reference number (unique per transaction) so
+        # same-day, same-amount, same-payee transactions aren't mistaken for duplicates.
+        dedup_key = f"ref|{row['ref_no']}" if row.get('ref_no') else f"{row['date']}|{row['description']}|{row['amount']}"
+        row_hash = hashlib.sha256(dedup_key.encode()).hexdigest()
         if row_hash in existing_hashes:
             continue
         existing_hashes.add(row_hash)
