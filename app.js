@@ -117,6 +117,9 @@ if (typeof document !== 'undefined') {
   const trendEl = document.getElementById('month-trend');
   const monthCardsEl = document.getElementById('month-cards');
   const breakdownEl = document.getElementById('month-breakdown');
+  const importForm = document.getElementById('import-form');
+  const importFileInput = document.getElementById('import-file');
+  const importStatusEl = document.getElementById('import-status');
 
   dateInput.value = new Date().toISOString().slice(0, 10);
   descInput.addEventListener('input', () => {
@@ -255,6 +258,28 @@ if (typeof document !== 'undefined') {
     dateInput.value = new Date().toISOString().slice(0, 10);
     categorySelect.value = 'Food & Dining';
     render();
+  });
+
+  importForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const file = importFileInput.files[0];
+    if (!file) return;
+    importStatusEl.textContent = 'Importing…';
+    importStatusEl.classList.remove('error');
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${API_BASE}/import`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Import failed');
+      importStatusEl.textContent = `Imported ${data.imported} of ${data.total_rows} transactions` +
+        (data.skipped_duplicates ? ` (${data.skipped_duplicates} already in your tracker).` : '.');
+      importForm.reset();
+      await loadExpenses();
+    } catch (err) {
+      importStatusEl.textContent = err.message;
+      importStatusEl.classList.add('error');
+    }
   });
 
   loadExpenses();
