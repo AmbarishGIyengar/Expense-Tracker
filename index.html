@@ -99,12 +99,29 @@
   .breakdown-subtitle { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; }
   .top-tx-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.88rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
   .top-tx-row:last-child { border-bottom: none; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  #logout-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-weight: 500; font-size: 0.82rem; white-space: nowrap; }
+  #logout-btn:hover { border-color: var(--accent); color: var(--text); opacity: 1; }
+  #app-error { display: none; background: rgba(248, 113, 113, 0.12); border: 1px solid var(--bad); color: var(--bad); border-radius: 8px; padding: 0.7rem 1rem; margin-bottom: 1.25rem; font-size: 0.88rem; }
+  #app-error.visible { display: block; }
+
+  @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+  .skeleton { background: linear-gradient(90deg, #0f172a 25%, #233045 37%, #0f172a 63%); background-size: 400px 100%; animation: shimmer 1.4s infinite linear; border-radius: 6px; }
+  .skeleton-line { height: 0.9rem; margin: 0.4rem 0; }
+  .skeleton-tile { height: 58px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>💸 Expense Tracker</h1>
-  <p class="sub">Log a spend, it auto-categorizes itself. Patterns worth noticing show up below.</p>
+  <div class="topbar">
+    <div>
+      <h1>💸 Expense Tracker</h1>
+      <p class="sub">Log a spend, it auto-categorizes itself. Patterns worth noticing show up below.</p>
+    </div>
+    <button type="button" id="logout-btn">Log out</button>
+  </div>
+  <p id="app-error"></p>
 
   <div class="card">
     <h2>Add expense</h2>

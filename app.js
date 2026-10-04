@@ -141,6 +141,8 @@ if (typeof document !== 'undefined') {
   let selectedMonth = null;
   let selectedRange = 'all';
 
+  const appErrorEl = document.getElementById('app-error');
+  const logoutBtn = document.getElementById('logout-btn');
   const form = document.getElementById('expense-form');
   const descInput = document.getElementById('description');
   const amountInput = document.getElementById('amount');
@@ -169,7 +171,19 @@ if (typeof document !== 'undefined') {
     listEl.innerHTML = '';
     [...expenses].sort((a, b) => b.date.localeCompare(a.date)).forEach((e) => {
       const li = document.createElement('li');
-      li.innerHTML = `<span class="desc">${e.description}</span><span class="cat">${e.category}</span><span class="amt">₹${e.amount.toFixed(0)}</span><span class="date">${e.date}</span>`;
+      const desc = document.createElement('span');
+      desc.className = 'desc';
+      desc.textContent = e.description; // textContent, not innerHTML: descriptions are user-entered
+      const cat = document.createElement('span');
+      cat.className = 'cat';
+      cat.textContent = e.category;
+      const amt = document.createElement('span');
+      amt.className = 'amt';
+      amt.textContent = `₹${e.amount.toFixed(0)}`;
+      const dt = document.createElement('span');
+      dt.className = 'date';
+      dt.textContent = e.date;
+      li.append(desc, cat, amt, dt);
       const del = document.createElement('button');
       del.textContent = '×';
       del.className = 'delete';
@@ -364,60 +378,137 @@ if (typeof document !== 'undefined') {
           </div>
         </div>`;
 
-      const top = [...monthExpenses].sort((a, b) => b.amount - a.amount).slice(0, 5);
-      html += `
-        <div class="breakdown-subtitle">Largest transactions</div>
-        ${top.map((e) => `<div class="top-tx-row"><span>${e.description}</span><span>₹${e.amount.toFixed(0)}</span></div>`).join('')}`;
+      html += `<div class="breakdown-subtitle">Largest transactions</div>`;
     }
 
     breakdownEl.innerHTML = html;
+
+    if (monthExpenses.length) {
+      const top = [...monthExpenses].sort((a, b) => b.amount - a.amount).slice(0, 5);
+      for (const e of top) {
+        const row = document.createElement('div');
+        row.className = 'top-tx-row';
+        const desc = document.createElement('span');
+        desc.textContent = e.description; // user-entered — keep out of innerHTML
+        const amt = document.createElement('span');
+        amt.textContent = `₹${e.amount.toFixed(0)}`;
+        row.append(desc, amt);
+        breakdownEl.appendChild(row);
+      }
+    }
+  }
+
+  function showError(message) {
+    appErrorEl.textContent = message;
+    appErrorEl.classList.add('visible');
+  }
+
+  function clearError() {
+    appErrorEl.classList.remove('visible');
+  }
+
+  function showSkeleton() {
+    statGridEl.innerHTML = Array(4).fill('<div class="stat-tile skeleton skeleton-tile"></div>').join('');
+    trendEl.innerHTML = '<div class="skeleton" style="height:130px"></div>';
+    listEl.innerHTML = Array(3).fill('<li><span class="skeleton skeleton-line" style="width:100%"></span></li>').join('');
+  }
+
+  // Wraps a fetch so network/server failures surface as a banner instead of
+  // a silently blank page; redirects to the login page on a dropped session.
+  async function apiFetch(url, options) {
+    let res;
+    try {
+      res = await fetch(url, options);
+    } catch {
+      throw new Error("Can't reach the server — check your connection and try again.");
+    }
+    if (res.status === 401) {
+      window.location.href = '/login.html';
+      throw new Error('Session expired');
+    }
+    return res;
   }
 
   async function loadExpenses() {
-    const res = await fetch(API_BASE);
-    expenses = await res.json();
-    render();
+    showSkeleton();
+    try {
+      const res = await apiFetch(API_BASE);
+      if (!res.ok) throw new Error('Could not load your expenses. Try refreshing.');
+      expenses = await res.json();
+      clearError();
+      render();
+    } catch (err) {
+      showError(err.message);
+    }
   }
 
   async function deleteExpense(id) {
-    await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-    expenses = expenses.filter((x) => x.id !== id);
-    render();
+    try {
+      const res = await apiFetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Could not delete that expense.');
+      expenses = expenses.filter((x) => x.id !== id);
+      render();
+    } catch (err) {
+      showError(err.message);
+    }
   }
+
+  logoutBtn.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  });
 
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const amount = parseFloat(amountInput.value);
     if (!amount || amount <= 0) return;
-    const res = await fetch(API_BASE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        description: descInput.value.trim() || '(no description)',
-        amount,
-        category: categorySelect.value || categorize(descInput.value),
-        date: dateInput.value,
-      }),
-    });
-    const created = await res.json();
-    expenses.push(created);
-    form.reset();
-    dateInput.value = new Date().toISOString().slice(0, 10);
-    categorySelect.value = 'Food & Dining';
-    render();
+    try {
+      const res = await apiFetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: descInput.value.trim() || '(no description)',
+          amount,
+          category: categorySelect.value || categorize(descInput.value),
+          date: dateInput.value,
+        }),
+      });
+      if (!res.ok) throw new Error('Could not save that expense. Try again.');
+      const created = await res.json();
+      expenses.push(created);
+      clearError();
+      form.reset();
+      dateInput.value = new Date().toISOString().slice(0, 10);
+      categorySelect.value = 'Food & Dining';
+      render();
+    } catch (err) {
+      showError(err.message);
+    }
   });
+
+  const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 
   importForm.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const file = importFileInput.files[0];
     if (!file) return;
+    if (!/\.(csv|pdf|xlsx)$/i.test(file.name)) {
+      importStatusEl.textContent = 'Only .csv, .pdf, and .xlsx files are supported.';
+      importStatusEl.classList.add('error');
+      return;
+    }
+    if (file.size > MAX_IMPORT_BYTES) {
+      importStatusEl.textContent = 'File is too large (max 5 MB).';
+      importStatusEl.classList.add('error');
+      return;
+    }
     importStatusEl.textContent = 'Importing…';
     importStatusEl.classList.remove('error');
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch(`${API_BASE}/import`, { method: 'POST', body: formData });
-      const data = await res.json();
+      const res = await apiFetch(`${API_BASE}/import`, { method: 'POST', body: formData });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || 'Import failed');
       importStatusEl.textContent = `Imported ${data.imported} of ${data.total_rows} transactions` +
         (data.skipped_duplicates ? ` (${data.skipped_duplicates} already in your tracker).` : '.');

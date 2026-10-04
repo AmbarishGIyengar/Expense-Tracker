@@ -14,6 +14,22 @@ SQLModel.metadata.create_all(engine)
 app.dependency_overrides[get_session] = lambda: Session(engine)
 client = TestClient(app)
 
+# Auth: signup/login/logout, and that the API is gated behind a session
+assert client.get("/api/expenses").status_code == 401
+
+signup = client.post("/api/auth/signup", json={"email": "test@example.com", "password": "hunter22"})
+assert signup.status_code == 201 and signup.json()["email"] == "test@example.com"
+assert client.post("/api/auth/signup", json={"email": "test@example.com", "password": "hunter22"}).status_code == 409
+assert client.post("/api/auth/signup", json={"email": "bad", "password": "hunter22"}).status_code == 422
+assert client.post("/api/auth/signup", json={"email": "short@example.com", "password": "short"}).status_code == 422
+
+assert client.post("/api/auth/login", json={"email": "test@example.com", "password": "wrong"}).status_code == 401
+assert client.get("/api/auth/me").json()["email"] == "test@example.com"
+
+client.post("/api/auth/logout")
+assert client.get("/api/expenses").status_code == 401
+assert client.post("/api/auth/login", json={"email": "test@example.com", "password": "hunter22"}).status_code == 200
+
 created = client.post("/api/expenses", json={
     "date": "2026-10-01", "description": "lunch", "amount": 150, "category": "Food & Dining",
 }).json()
@@ -93,5 +109,11 @@ xlsx2_again = client.post(
 assert xlsx2_again == {"total_rows": 2, "imported": 0, "skipped_duplicates": 2}
 for e in client.get("/api/expenses").json():
     client.delete(f"/api/expenses/{e['id']}")
+
+# Import restrictions: wrong extension, and oversized file
+rejected = client.post("/api/expenses/import", files={"file": ("notes.txt", b"hello", "text/plain")})
+assert rejected.status_code == 400
+too_big = client.post("/api/expenses/import", files={"file": ("statement.csv", b"x" * (5 * 1024 * 1024 + 1), "text/csv")})
+assert too_big.status_code == 413
 
 print("all backend self-checks passed")
