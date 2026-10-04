@@ -11,6 +11,7 @@ DESC_KEYS = {'description', 'narration', 'particulars', 'details', 'transaction 
 AMOUNT_KEYS = {'amount'}
 DEBIT_KEYS = {'debit', 'withdrawal', 'withdrawal amt.', 'withdrawal amt', 'dr'}
 TAG_KEYS = {'tags', 'tag', 'category'}
+REF_KEYS = {'upi ref no.', 'upi ref no', 'ref no.', 'ref no', 'reference no', 'reference number', 'cheque no.', 'cheque no'}
 
 DATE_FORMATS = ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d %b %Y', '%m/%d/%Y']
 
@@ -71,6 +72,7 @@ def parse_rows(rows):
     amount_col = _find_col(headers, AMOUNT_KEYS)
     debit_col = _find_col(headers, DEBIT_KEYS)
     tag_col = _find_col(headers, TAG_KEYS)
+    ref_col = _find_col(headers, REF_KEYS)
 
     if not date_col or not desc_col or not (amount_col or debit_col):
         raise StatementFormatError('Could not find date/description/amount columns')
@@ -94,6 +96,10 @@ def parse_rows(rows):
             amount = val
 
         row_out = {'date': date_str, 'description': description, 'amount': amount}
+        if ref_col:
+            ref_no = str(row.get(ref_col) or '').strip()
+            if ref_no:
+                row_out['ref_no'] = ref_no
         if tag_col:
             category = category_from_tag(row.get(tag_col))
             if category:

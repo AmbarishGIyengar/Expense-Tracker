@@ -70,4 +70,28 @@ assert xlsx_expense["source"] == "xlsx" and xlsx_expense["amount"] == 40.0
 assert xlsx_expense["category"] == "Food & Dining"
 client.delete(f"/api/expenses/{xlsx_expense['id']}")
 
+# xlsx import: two genuinely separate transactions with the same date, payee,
+# and amount must NOT be deduped against each other when a UPI Ref No. is present
+wb2 = openpyxl.Workbook()
+ws2 = wb2.create_sheet("Passbook Payment History")
+del wb2["Sheet"]
+ws2.append(["Date", "Transaction Details", "Amount", "UPI Ref No."])
+ws2.append(["03/10/2026", "Paid to Pampati Ismail", "-13.00", "111111111111"])
+ws2.append(["03/10/2026", "Paid to Pampati Ismail", "-13.00", "222222222222"])
+xlsx2_buf = io.BytesIO()
+wb2.save(xlsx2_buf)
+xlsx2_result = client.post(
+    "/api/expenses/import",
+    files={"file": ("statement2.xlsx", xlsx2_buf.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+).json()
+assert xlsx2_result == {"total_rows": 2, "imported": 2, "skipped_duplicates": 0}
+# re-importing the same file is still deduped via the ref no.
+xlsx2_again = client.post(
+    "/api/expenses/import",
+    files={"file": ("statement2.xlsx", xlsx2_buf.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+).json()
+assert xlsx2_again == {"total_rows": 2, "imported": 0, "skipped_duplicates": 2}
+for e in client.get("/api/expenses").json():
+    client.delete(f"/api/expenses/{e['id']}")
+
 print("all backend self-checks passed")
