@@ -151,7 +151,9 @@ if (typeof document !== 'undefined') {
   const rangeRowEl = document.getElementById('range-row');
   const statGridEl = document.getElementById('stat-grid');
   const trendEl = document.getElementById('month-trend');
-  const monthCardsEl = document.getElementById('month-cards');
+  const monthDeckEl = document.getElementById('month-deck');
+  const monthPrevEl = document.getElementById('month-prev');
+  const monthNextEl = document.getElementById('month-next');
   const breakdownEl = document.getElementById('month-breakdown');
   const importForm = document.getElementById('import-form');
   const importFileInput = document.getElementById('import-file');
@@ -289,15 +291,30 @@ if (typeof document !== 'undefined') {
     trendEl.querySelectorAll('circle').forEach((c) => c.addEventListener('click', () => selectMonth(c.dataset.key)));
   }
 
+  // 3D carousel: cards fan out left/right from the selected month using
+  // native CSS 3D transforms, depth-sorted by distance from the active card.
   function renderMonthCards(months) {
-    monthCardsEl.innerHTML = '';
-    [...months].reverse().forEach(([key, amt]) => {
+    monthDeckEl.innerHTML = '';
+    const activeIdx = months.findIndex(([key]) => key === selectedMonth);
+
+    months.forEach(([key, amt], i) => {
+      const offset = i - activeIdx;
+      const absOffset = Math.abs(offset);
       const card = document.createElement('div');
-      card.className = 'month-card' + (key === selectedMonth ? ' selected' : '');
+      card.className = 'month-card' + (offset === 0 ? ' active' : '');
+      card.style.transform = `translateX(${offset * 100}px) translateZ(${-absOffset * 60}px) rotateY(${-offset * 25}deg) scale(${Math.max(0.7, 1 - absOffset * 0.15)})`;
+      card.style.opacity = absOffset > 3 ? '0' : String(1 - absOffset * 0.25);
+      card.style.zIndex = String(100 - absOffset);
+      card.style.pointerEvents = absOffset > 3 ? 'none' : 'auto';
       card.innerHTML = `<div class="month-card-label">${monthLabel(key)}</div><div class="month-card-amt">₹${amt.toFixed(0)}</div>`;
       card.onclick = () => selectMonth(key);
-      monthCardsEl.appendChild(card);
+      monthDeckEl.appendChild(card);
     });
+
+    monthPrevEl.disabled = activeIdx <= 0;
+    monthNextEl.disabled = activeIdx === -1 || activeIdx >= months.length - 1;
+    monthPrevEl.onclick = () => activeIdx > 0 && selectMonth(months[activeIdx - 1][0]);
+    monthNextEl.onclick = () => activeIdx < months.length - 1 && selectMonth(months[activeIdx + 1][0]);
   }
 
   function donutGradient(catTotals, total) {

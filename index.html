@@ -64,12 +64,22 @@
   .trend-dot.selected { fill: var(--warn); stroke: var(--warn); }
   .trend-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 1rem; }
 
-  .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 0.6rem; }
-  .month-card { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-  .month-card:hover { border-color: var(--accent); }
-  .month-card.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.1); }
-  .month-card-label { font-size: 0.78rem; color: var(--muted); }
-  .month-card-amt { font-size: 1.1rem; font-weight: 700; margin-top: 0.15rem; }
+  .month-stage { position: relative; height: 150px; margin-top: 0.4rem; perspective: 900px; overflow: hidden; }
+  .month-deck { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .month-nav { position: absolute; top: 50%; margin-top: -15px; width: 30px; height: 30px; border-radius: 50%; background: #0f172a; border: 1px solid var(--border); color: var(--text); font-size: 1rem; line-height: 1; cursor: pointer; z-index: 10; }
+  #month-prev { left: 4px; }
+  #month-next { right: 4px; }
+  .month-nav:hover:not(:disabled) { border-color: var(--accent); }
+  .month-nav:disabled { opacity: 0.3; cursor: default; }
+  .month-card {
+    position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px;
+    background: #0f172a; border: 1px solid var(--border); border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s, border-color 0.2s;
+  }
+  .month-card.active { border-color: var(--accent); box-shadow: 0 0 20px rgba(56, 189, 248, 0.35); }
+  .month-card-label { font-size: 0.72rem; color: var(--muted); }
+  .month-card-amt { font-size: 1rem; font-weight: 700; margin-top: 0.2rem; }
 
   /* Month breakdown */
   .breakdown-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
@@ -132,7 +142,11 @@
   <div class="card">
     <h2>Monthly trend</h2>
     <div id="month-trend"></div>
-    <div id="month-cards" class="month-grid"></div>
+    <div class="month-stage">
+      <button id="month-prev" type="button" class="month-nav" aria-label="Previous month">‹</button>
+      <div id="month-deck" class="month-deck"></div>
+      <button id="month-next" type="button" class="month-nav" aria-label="Next month">›</button>
+    </div>
   </div>
 
   <div class="card">
