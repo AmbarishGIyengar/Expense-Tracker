@@ -7,3 +7,5 @@ __pycache__/
 *.csv
 *.pdf
 *.xlsx
+.vercel
+.env*

@@ -1,12 +1,22 @@
+import os
+
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "sqlite:///./expense_tracker.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "sqlite:///./expense_tracker.db"
+# Neon/Vercel hand out "postgres://" or "postgresql://"; SQLAlchemy needs the psycopg dialect spelled out.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
+IS_SQLITE = DATABASE_URL.startswith("sqlite")
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if IS_SQLITE else {})
 
 
 def init_db():
     SQLModel.metadata.create_all(engine)
-    _migrate_add_user_id()
+    if IS_SQLITE:
+        _migrate_add_user_id()
 
 
 def _migrate_add_user_id():
