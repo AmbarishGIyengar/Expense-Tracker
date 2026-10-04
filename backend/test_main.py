@@ -14,6 +14,19 @@ SQLModel.metadata.create_all(engine)
 app.dependency_overrides[get_session] = lambda: Session(engine)
 client = TestClient(app)
 
+# Auth: expenses are scoped to a logged-in user; TestClient persists the
+# session cookie set on signup across the rest of these requests.
+assert client.get("/api/expenses").status_code == 401
+assert client.post("/api/auth/signup", json={"username": "asha", "password": "s3cret"}).json() == {"username": "asha"}
+assert client.post("/api/auth/signup", json={"username": "asha", "password": "other"}).status_code == 400
+assert client.post("/api/auth/login", json={"username": "asha", "password": "wrong"}).status_code == 401
+assert client.get("/api/auth/me").json() == {"username": "asha"}
+
+other = TestClient(app)
+other.post("/api/auth/signup", json={"username": "ravi", "password": "s3cret"})
+other.post("/api/expenses", json={"date": "2026-10-01", "description": "ravi's lunch", "amount": 99, "category": "Food & Dining"})
+assert [e["description"] for e in client.get("/api/expenses").json()] == []  # asha can't see ravi's expenses
+
 created = client.post("/api/expenses", json={
     "date": "2026-10-01", "description": "lunch", "amount": 150, "category": "Food & Dining",
 }).json()
@@ -93,5 +106,8 @@ xlsx2_again = client.post(
 assert xlsx2_again == {"total_rows": 2, "imported": 0, "skipped_duplicates": 2}
 for e in client.get("/api/expenses").json():
     client.delete(f"/api/expenses/{e['id']}")
+
+assert client.post("/api/auth/logout").json() == {"ok": True}
+assert client.get("/api/expenses").status_code == 401
 
 print("all backend self-checks passed")

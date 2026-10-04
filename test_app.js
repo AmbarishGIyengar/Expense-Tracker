@@ -50,7 +50,7 @@ const sixMonths = [['2026-05', 1], ['2026-06', 2], ['2026-07', 3], ['2026-08', 4
 assert.deepStrictEqual(monthsInRange(sixMonths, '3'), [['2026-08', 4], ['2026-09', 5], ['2026-10', 6]]);
 assert.deepStrictEqual(monthsInRange(sixMonths, 'all'), sixMonths);
 
-assert.strictEqual(categoryColor('Food & Dining'), '#38bdf8');
-assert.strictEqual(categoryColor('Something unknown'), '#64748b'); // fallback for unmapped categories
+assert.strictEqual(categoryColor('Food & Dining'), '#E0607A');
+assert.strictEqual(categoryColor('Something unknown'), '#6B6894'); // fallback for unmapped categories
 
 console.log('all app.js self-checks passed');
